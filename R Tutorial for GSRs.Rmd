@@ -1,0 +1,116 @@
+---
+title: "R Tutorial for GSRs"
+author: "Randy Clopton"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview of RStudio
+This document was created using RStudio, an IDE designed to make R easier to use
+and to add in additional functionality. RStudio is the place you should go to 
+get started on your R journey. To use RStudio, you do need to download R
+separately, so make sure you've downloaded both.
+
+You can download R here: https://www.r-project.org/
+
+You can download RStudio here: https://posit.co/products/open-source/rstudio/
+
+In addition, to use some of the key functionality that RStudio has built in, it 
+may help to download a TeX editor (this just lets you use some formatting
+features of RStudio better, and is totally optional), You can download the
+preferred version for RStudio here: https://miktex.org/download
+
+## RStudio Layout
+RStudio has four main panes.
+* Source pane: where you see your code
+* Console pane: where you see your code run
+* Environment pane: shows you what objects you've created, plus the code you've
+run recently
+* Output pane: shows you any files, plots, or other things you've created. Also
+lets you find new packages, use the help feature, and enter presentation mode.
+
+## R Script and Markdown Files
+All of your work will be done in one of these two file types. R Scripts are just
+documents where you put all of your code. R Markdown documents are a bit fuller
+featured and let you do things like text formatting, organizing your code into
+discrete chunks, and printing your output directly in the source pane. The main
+advantage of markdown files for students is to create well formatted documents 
+that are ready to use as your finalized problem set.
+
+## RStudio Projects
+RStudio also has a projects feature that lets you tie together a number of 
+different files that are intended to be used in concert, including code, data 
+files, and anything you output as part of your process. Creating a project also
+tells R to load a directory that you created to contain all your files, which 
+makes it easier to call up different files.
+
+## Loading Relevant Packages
+Before you start anything up in R, you will need to load in any packages you
+want to use to conduct your analysis. We will discuss useful packages later, 
+but for now, here's what the process of loading in packages looks like
+
+```{r Load Packages}
+#tidyverse is probably the most useful package and at least one of its elements
+#will probably be loaded in every project you do
+library(tidyverse)
+#the plm package is a go-to for panel data. Once you get to fixed effects, this
+#package will let you easily run models with defined fixed effects.
+library(plm)
+```
+
+
+# Data Import and Manipulation (Ripper)
+
+## Data Formats and Use Cases
+
+### Data Types
+
+### Data Structures
+
+## Importing Data Files
+```{r Import Data}
+
+```
+
+
+## Data Shaping and the Pipe Function
+
+### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
+
+# Conducting Statistical Analyses Using R (Clopton)
+
+## Generating Summary Statistics
+```{r}
+
+```
+
+## T Tests and Correlations
+```{r}
+
+```
+
+## Regressions
+```{r}
+
+```
+
+## F Tests
+```{r}
+
+```
+
+## Interaction Terms and Difference-in-Difference
+```{r}
+
+```
+
+## Visualizations
+```{r}
+
+```
+
+## Additional Useful Packages
