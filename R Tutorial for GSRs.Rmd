@@ -62,24 +62,279 @@ library(tidyverse)
 library(plm)
 ```
 
-
 # Data Import and Manipulation (Ripper)
+On the very off chance your data are perfectly prepared and ready for analysis,
+you will need to perform a form of initial loading and analysis to ensure
+the data can work well in an R environment. This process starts with first
+understanding the different data formats that are compatible with R and how
+those formats can be used in different scenarios depending on project needs
+and outcomes. We then focus on data types and structures to understand how R
+processes your data and how we can best structure your data to work in your 
+environment. We continue with showing how we can load your data in to R (with
+examples to showcase how flexible R is with different data sources) and finish
+by showing how R can shape and manipulate data to work well in further analysis.
 
 ## Data Formats and Use Cases
+Even though R has the ability to load in data from different file types, there
+exists two native data formats particular to use in an R environment. These
+two formats are Rdata (Rda) and Rds. One would use these formats in order to
+directly save R objects created in a session for later use. The Rdata data
+format is used to save multiple R objects where the Rds data format can save
+a single R object. Depending on use case, the user has the option to save
+multiple or singular objects within a native R data format. The user even has
+the option to save the entire work space (an entire workflow or analysis) for
+later use.
 
 ### Data Types
+There are five primary data types in R. They are listed below with quick
+examples. We will also discuss functions that examine the features of R objects.
+
+**Data Types**
+1. Character: "p", "CRD"
+2. Numeric: 5, 3.14
+3. Integer: 3L (the L forces R to store as an integer)
+4. Logical: TRUE (1), FALSE (0)
+5. Complex: 2 + 3i
+
+**Functions for Feature Examination**
+1. class() - What kind of object is it?
+2. typeof() - What is the object's data type?
+3. length() - How long is it? What are its dimensions?
+4. attributes() - Does it have any metadata?
+
+Please be aware that some functionality in R forces the use of similar data
+types in order to ensure consistency. For example, R will not let the user
+add together a numeric object with a character data type. It is also important
+to note that logicals can be treated as 1s or 0s depending on the context in
+which they are used.
 
 ### Data Structures
+We will discuss the most important data structures available in R. We will also
+discuss exploratory functions to help us better understand the contents of
+different data structures and how this will lead to a full data pipeline.
 
-## Importing Data Files
-```{r Import Data}
+First, we observe the primary data structures in R:
+1. Vector
+2. List
+3. Matrix
+4. Data Frame
 
+**Vector**
+A vector is a collection of entries that are of the same data type. The
+creation of the vector will allow for entries to be of different data
+types but R will force the conversion of the other entries so that all entries
+are of the same data type. One example would be creating a vector of the entries
+1, 3, and "r". R will force all entries to be of a character data type since
+it can convert 1 and 3 to a character but cannot convert "r" to a numeric or
+integer data type. Below are some examples creating a vector, adding to a
+vector, and examining the contents of the vector. Vectors can also handle
+missing data entries (NA). We will examine how we can identify missing
+entries as well.
+
+```{r Vector}
+# Create a vector.
+v <- c(2, 3)
+
+# Add an element to the vector.
+v <- c(v, 5, 7)
+
+# Observe the updated vector.
+v
+
+# Get the third element from the vector (NOTE: R is 1 indexed).
+v[[3]]
+
+# Examine the type of contents in the vector.
+typeof(v)
+
+# Examine the length of the vector.
+length(v)
+
+# Add an NA element to the vector.
+v <- c(NA, v, NA)
+
+# Check if the vector has any NA values.
+anyNA(v)
+
+# Check to see where the vector has a NA values.
+which(is.na(v))
 ```
 
+**List**
+A list is similar to a vector but allows for entries of different data types.
+We can even coerce a vector to become a list. Again, we explore the creation of
+a list, adding to a list, and examining contents of the list. A list can hold
+other more developed data types and structures, such as other lists, matrices,
+and data frames.
+
+```{r List}
+# Create a list.
+l <- list(3, "t", FALSE, 3 + 3i, NA)
+
+# Observe the list.
+l
+
+# Examine the length of the list.
+length(v)
+
+# Get the second element from the list.
+l[[2]]
+
+# Convert vector to list.
+v <- as.list(v)
+```
+
+**Matrix**
+Matrices are vectors of two dimensions. They carry the same general
+characteristic of a vector (all entries must be of the same data type). We can
+easily convert a vector to a matrix by defining its dimensions (number of rows 
+and number of columns). We show how to construct a matrix and how to access
+certain elements in a matrix.
+
+```{r Matrix}
+# We first define a vector.
+v <- 1:6
+
+# We can now transform the vector into a matrix by changing the dimensions.
+dim(v) <- c(2, 3)
+
+# We now observe the matrix has 2 rows and 3 columns.
+v
+
+# We can access entries in a matrix by indexing the row and then the column.
+v[2, 2]
+
+# We can also create a matrix using the matrix constructor function.
+m <- matrix(1:6, nrow = 2, ncol = 3)
+
+# We observe the matrix is built identically to the one above.
+m
+```
+
+**Data Frame**
+Most of your analysis will involve the use of a data frame because of its ability
+to house data of different type and the ease with which R makes it to import
+data to a data frame. Data frames are a specific type of list where every
+element of this list has the same length. This allows for the presence of
+missing data and uniformity across observations. We usually create a data frame
+when loading in data from  an external document. However, we will show how to
+create a data frame on the fly and functionality to observe the data frame and
+its construction.
+
+```{r Data Frame}
+# We start by creating a data frame by hand.
+df <- data.frame(id = letters[1:10], x = 1:10, y = 11:20)
+
+# We observe the entire data frame above.
+df
+
+# We can observe the top of the data frame.
+head(df)
+
+# We observe the bottom of the data frame.
+tail(df)
+
+# We observe the dimensions of the data frame.
+dim(df)
+
+# We reference certain elements in the data frame by indexing [row, column].
+df[5, 2]
+
+# We pull out entire columns from the data frame.
+df[["id"]]
+
+# We pull out columns also by the $ operator in R.
+df$id
+```
+
+## Importing Data Files
+Importing data files is the first step of your analysis. One of the most
+important aspects of importing is knowing the data's file type and also where
+the file is located on your computer.
+
+To avoid confusion over computer directories, you can set the working directory
+of the current R-Markdown file by clicking "Session" -> "Set Working Directory".
+If the files you would like to import as data are located in the same directory
+as the current R or R-Markdown file, click "To Source File Location". Otherwise,
+click "Choose Directory...". You also do not need to set the working directory
+and can instead use the full file location when loading in data.
+
+```{r Working Directory}
+# Confirm your working directory.
+getwd()
+
+# Can also set working directory using setwd(dir = desired directory).
+```
+
+```{r Import RData File}
+## Example loading in an RData file.
+
+# Load RData file to R object.
+rdata <- load(file = "RData_ex.rda")
+
+# Make sure the data were loaded properly.
+dim(rdata)
+```
+
+```{r Import Excel File}
+## Example loading in an Excel file.
+
+# Include library to load both XLS and XLSX files.
+library(readxl)
+
+# Load Excel file to R object.
+excel <- read_excel("Excel_ex.xls", sheet = NA)
+
+# Make sure the data were loaded properly.
+dim(excel)
+```
+
+```{r Import CSV File}
+## Example loading in a CSV file.
+
+# Load CSV file in to R object.
+csv <- read.csv(file = "CSV_ex.csv")
+
+# Make sure the data were loaded properly.
+dim(csv)
+```
+
+```{r Import Stata File}
+## Example loading in a Stata file.
+
+# Include library to load Stata file.
+library(haven)
+
+# Load Stata file in to R object.
+stata <- read_dta(file = "Stata_ex.dta")
+
+# Make sure the data were loaded properly.
+dim(stata)
+```
+
+R also has the ability to web-scrape and communicate with Application
+Programming Interfaces (APIs). Web-scraping is a technique used to collect
+information or data from a website. This process is relient on the inherent
+structure of a website (the actual HTML objects). APIs are ways to collect
+information or data from a service. This service may be offered by a government
+agency or a company. These APIs are sometimes key protected and only available
+behind pay-walls. Others are publicly accessible but may be limited by the
+number of times you may ask the API to submit/transmit information and data.
+Both of these techniques of collecting data (webscraping and API connectivity)
+can be reviewed in further detail by following the links below:
+
+[Web-scraping](https://r4ds.hadley.nz/webscraping)
+
+[Application Programming Interfaces (APIs)](https://info201.github.io/apis.html)
 
 ## Data Shaping and the Pipe Function
 
+
 ### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
+
+```{r Dummy Variable}
+
+```
 
 # Conducting Statistical Analyses Using R (Clopton)
 
