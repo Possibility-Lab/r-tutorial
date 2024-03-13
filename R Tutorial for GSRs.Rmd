@@ -264,6 +264,7 @@ and can instead use the full file location when loading in data.
 getwd()
 
 # Can also set working directory using setwd(dir = desired directory).
+
 ```
 
 ```{r Import RData File}
@@ -293,7 +294,7 @@ dim(excel)
 ## Example loading in a CSV file.
 
 # Load CSV file in to R object.
-csv <- read.csv(file = "CSV_ex.csv")
+csv <- read.csv(file = "CDE_Graduation_Counts.csv") #RC: Since I've chosen a .csv data file to load in, I'm going ahead and loading it so I can play with it in the analysis section
 
 # Make sure the data were loaded properly.
 dim(csv)
@@ -328,6 +329,9 @@ can be reviewed in further detail by following the links below:
 [Application Programming Interfaces (APIs)](https://info201.github.io/apis.html)
 
 ## Data Shaping and the Pipe Function
+```{r}
+
+```
 
 
 ### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
@@ -337,16 +341,94 @@ can be reviewed in further detail by following the links below:
 ```
 
 # Conducting Statistical Analyses Using R (Clopton)
+This section will cover some basics of tasks and tools that are common at GSPP 
+as part of the core quantitative methods class. We will be using a real data set
+Randy created for the C2C project containing a list of the number of students
+that graduated high school in a given academic year.
 
 ## Generating Summary Statistics
-```{r}
+```{r Summary Stats}
+#examine the data a bit
+#let's look at the column names
+colnames(csv)
+
+#mean
+mean(csv$One.Year.Graduate.Count)
+# Why didn't that give me a number? There's some N/As in the data! 
+# Let's add something to help us here
+mean(csv$One.Year.Graduate.Count, na.rm=T)
+# Ideally, you should clean up your N/A values before you do any analysis
+
+#median
+median(csv$One.Year.Graduate.Count, na.rm=T)
+
+#standard deviation
+sd(csv$One.Year.Graduate.Count, na.rm=T)
 
 ```
 
 ## T Tests and Correlations
-```{r}
+Before we get too deep into this, let's clean the data a bit. The graduation
+counts are all for school years, so they look like this
+```{r Academic Year}
+unique(csv$Academic.Year) #the unique() function shows the unique values for an object
+```
+That's not really how we want that to look, so let's modify that column a bit to
+give us discrete years
+
+```{r Change Academic Year to single years}
+#the substr() function lets us just take a chunk of a string. Here, we want just
+#the 6th through 9th characters. We're also coercing it to a number.
+csv=csv %>%
+  mutate(Year=as.numeric(substr(Academic.Year,6,9))) %>%
+  relocate(Year,1) #mutate adds columns to the end of the dataframe, so I'm
+                   #putting it at the front
+
+head(csv)
+```
+Now that we have a number rather than a character for Year, it will be easier to
+do some testing with it. Let's see if there's a correlation between the total
+number of white graduates over the years and the total number of Hispanic
+graduates over the years.
+
+```{r Correlation White/Hispanic}
+#First, we need to massage the data into a better form for a correlation test
+corr_data=csv %>%
+  select(Year,Reporting.Category, One.Year.Graduate.Count) %>%
+  group_by(Year,Reporting.Category) %>%
+  summarise(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>%
+  pivot_wider(names_from = Reporting.Category, values_from = Grad.Count)
+
+corr_data
+
+#now that the data is in a format where we can compare Hispanic and White, let's
+#correlate
+cor(corr_data$`Hispanic/Latino`,corr_data$White)
 
 ```
+Interesting! There's a strong negative correlation here. When we look at the
+data, we can see why. Hispanic/Latino graduates have increased in number while
+White graduates have reduced over the same period. Remember, correlation does
+not imply causation, so this observation doesn't mean much unless we dig
+further.
+
+Now let's attempt a T-test. We can subset this data all the way down to the
+school level, so let's see if we can compare graduation numbers across two
+counties in the Bay Area of roughly similar size: Alameda and Santa Clara. Let's
+subset our data at the school level, then compare
+
+```{r T-test}
+#subset to school level
+t_data=csv %>%
+  select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
+  group_by(County.Name,School.Name) %>% #group by both county and school
+  summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
+  filter(County.Name %in% c("Alameda","Santa Clara")) %>% #we only want these two counties, double equal for Boolean
+  select(County.Name,Grad.Count) 
+
+
+```
+
 
 ## Regressions
 ```{r}
