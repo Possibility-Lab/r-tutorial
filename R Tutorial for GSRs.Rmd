@@ -340,9 +340,55 @@ can be reviewed in further detail by following the links below:
 [Application Programming Interfaces (APIs)](https://info201.github.io/apis.html)
 
 ## Data Shaping and the Pipe Function
+Data shaping along with the pipe function give us the ability to manipulate our
+data so that it is presented in a manner that makes the most sense for our
+analysis and also a manner of analysis itself. We can take our data and
+transform how it displays to gain some points of interest that we might not have
+been aware of beforehand.
+
+Data shaping is the method by which we can make our data "wide" or "long" using
+the "reshape" library. We make our data "long" by using the "melt" function
+built in to R so that we can extend our data to understand exact relationships
+between variables and values. We make our data "wide" by using the "cast"
+function built in to R so that we can aggregate content in a data frame to
+present statistical values for observations across a grouping. We can use "melt"
+and "cast" interchangeably to go from a "wide" data frame to a "long" data frame
+and back.
+
+```{r Data Shaping - Long}
+# Include the "reshape" library.
+library(reshape)
+
+# Let us start with a preliminary data frame.
+df <- data.frame(id = 1:10, letter = letters[1:10], x = 1:10, y = 11:20)
+
+# First, let's make the data frame "long" by the "letter" variable.
+df_long <- melt(df, id = "letter")
+
+# Observe the "long" data frame.
+df_long
+```
+
+We see that we were able to extract the "letter"-"variable"-"value" assocations
+across the entire data frame using the "melt" function.
+
+```{r Data Shaping - Wide}
+# Let us now make the "long" data frame "wide" or back to its original format.
+df_wide <- cast(df_long, id = letter)
+
+# Observe the "wide" data frame.
+df_wide
+```
+
+We observe that we return the original data frame using the "cast" function
+where we translate the variable-value relationship back using the same original
+variable. We can use the the "cast" function further by creating statistical
+results across a grouping, such as a mean value across a certain grouping of
+observations.
 
 
-```{r}
+
+```{r Pipe Function}
 
 ```
 
@@ -452,7 +498,7 @@ give us discrete years
 #the 6th through 9th characters. We're also coercing it to a number.
 cde_grad_counts=cde_grad_counts %>%
   mutate(Year=as.numeric(substr(Academic.Year,6,9))) %>%
-  relocate(Year,1) #mutate adds columns to the end of the dataframe, so I'm
+  relocate(Year,1) #mutate adds columns to the end of the data frame, so I'm
                    #putting it at the front
 
 head(cde_grad_counts)
