@@ -212,14 +212,14 @@ m
 ```
 
 **Data Frame**
-Most of your analysis will involve the use of a data frame because of its ability
-to house data of different type and the ease with which R makes it to import
-data to a data frame. Data frames are a specific type of list where every
-element of this list has the same length. This allows for the presence of
-missing data and uniformity across observations. We usually create a data frame
-when loading in data from  an external document. However, we will show how to
-create a data frame on the fly and functionality to observe the data frame and
-its construction.
+Most of your analysis will involve the use of a data frame with its ability to
+house data of different type and the ease with which R makes it to import data
+to a data frame. Data frames are a specific type of list where every element
+of this list has the same length. This allows for the presence of missing
+data and uniformity across observations. We usually create a data frame when
+loading in data from  an external document. However, we will show how to create
+a data frame on the fly and functionality to observe the data frame and its
+construction.
 
 ```{r Data Frame}
 # We start by creating a data frame by hand.
@@ -264,17 +264,19 @@ and can instead use the full file location when loading in data.
 getwd()
 
 # Can also set working directory using setwd(dir = desired directory).
-
 ```
 
 ```{r Import RData File}
 ## Example loading in an RData file.
 
-# Load RData file to R object.
-rdata <- load(file = "RData_ex.rda")
+# Load RData file to R object. RData file directly loads content to R objects.
+load(file = "Tutorial_Data/RData_ex.rda")
 
 # Make sure the data were loaded properly.
 dim(rdata)
+
+# Check the top of the data frame to ensure it was loaded properly.
+head(rdata)
 ```
 
 ```{r Import Excel File}
@@ -284,20 +286,26 @@ dim(rdata)
 library(readxl)
 
 # Load Excel file to R object.
-excel <- read_excel("Excel_ex.xls", sheet = NA)
+excel <- read_excel("Tutorial_Data/Excel_ex.xlsx")
 
 # Make sure the data were loaded properly.
 dim(excel)
+
+# Check the top of the data frame to ensure it was loaded properly.
+head(excel)
 ```
 
 ```{r Import CSV File}
 ## Example loading in a CSV file.
 
 # Load CSV file in to R object.
-csv <- read.csv(file = "CDE_Graduation_Counts.csv") #RC: Since I've chosen a .csv data file to load in, I'm going ahead and loading it so I can play with it in the analysis section
+csv <- read.csv(file = "Tutorial_Data/CDE_Graduation_Counts.csv") #RC: Since I've chosen a .csv data file to load in, I'm going ahead and loading it so I can play with it in the analysis section
 
 # Make sure the data were loaded properly.
 dim(csv)
+
+# Check the top of the data frame to ensure it was loaded properly.
+head(csv)
 ```
 
 ```{r Import Stata File}
@@ -307,10 +315,13 @@ dim(csv)
 library(haven)
 
 # Load Stata file in to R object.
-stata <- read_dta(file = "Stata_ex.dta")
+stata <- read_dta(file = "Tutorial_Data/Stata_ex.dta")
 
 # Make sure the data were loaded properly.
 dim(stata)
+
+# Check the top of the data frame to ensure it was loaded properly.
+head(stata)
 ```
 
 R also has the ability to web-scrape and communicate with Application
@@ -329,15 +340,75 @@ can be reviewed in further detail by following the links below:
 [Application Programming Interfaces (APIs)](https://info201.github.io/apis.html)
 
 ## Data Shaping and the Pipe Function
+
+
 ```{r}
 
 ```
 
-
 ### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
+Since R cannot directly handle categorical/word values for features in our data
+sets, we must handle these values so that R can proceed with analysis. To do so,
+we create "dummy" variables or new features in our data set that replace the
+original feature. These dummy variables take on a value of 1 or 0 depending
+on the original value of an observation. 1 (TRUE) being the observation took on
+the value in that feature, 0 (FALSE) otherwise. These dummy variables must be
+created for each feature-value pair. We continue with an example of how to
+hand-code a dummy variable and an example of how to take advantage of written
+functionality to prepare all dummy variables for us.
 
-```{r Dummy Variable}
+```{r Dummy Variable - Slow}
+# Ensure we have loaded in the CSV file from above.
+cde_grad_counts <- csv
 
+# For this example, we will create a dummy variable for "County.Name".
+
+# Get the distinct values in "County.Name" for which we will create dummies.
+cde_grad_counts %>%
+  select(County.Name) %>% # Get the "County.Name" column.
+  unique() %>% # Observe the unique values.
+  head() %>% # Only observe the top 5 entries.
+  
+# We observe the first value is "Alameda".
+# We Will treat this as our base value to avoid multicollinearity issues.
+# Thus, we proceed to the next value, "Alpine".
+
+# We create the dummy variable for "County.Name.Alpine).
+cde_grad_counts <- cde_grad_counts %>% # Save updated data frame.
+  mutate(County.Name.Alpine = ifelse(County.Name == "Alpine", 1, 0)) # Create.
+
+# Observe how we have created the dummy variable.
+head(cde_grad_counts)
+```
+
+We observe we have created a new column related to whether or not the
+observation has a "County.Name" of "Alpine" (1 for yes and 0 otherwise). We will
+need to continue this process of creating new columns in our data set for the
+remaining values.
+
+Or, we can rely on built-in functionality available in R to construct the dummy
+variables for us without requiring the tedious work of defining new columns for
+each feature-value combination across our entire data set.
+
+```{r Dummy Variable - Slow}
+# Load in original data frame from CSV.
+cde_grad_counts <- csv
+
+# Import the "fastDummies" library to quickly make dummy variables.
+library(fastDummies)
+
+# Create the dummy variables for corresponding features.
+cde_grad_counts <- fastDummies::dummy_cols(cde_grad_counts,
+                                           c("Aggregate.Level", 
+                                             "Count.Name", 
+                                             "District.Name", 
+                                             "School.Name", 
+                                             "Reporting.Category"),
+                                           remove_first_dummy = TRUE,
+                                           remove_selected_columns = TRUE)
+
+# Observe how we have created the dummy variables.
+head(cde_grad_counts)
 ```
 
 # Conducting Statistical Analyses Using R (Clopton)
@@ -350,20 +421,20 @@ that graduated high school in a given academic year.
 ```{r Summary Stats}
 #examine the data a bit
 #let's look at the column names
-colnames(csv)
+colnames(cde_grad_counts)
 
 #mean
-mean(csv$One.Year.Graduate.Count)
+mean(cde_grad_counts$One.Year.Graduate.Count)
 # Why didn't that give me a number? There's some N/As in the data! 
 # Let's add something to help us here
-mean(csv$One.Year.Graduate.Count, na.rm=T)
+mean(cde_grad_counts$One.Year.Graduate.Count, na.rm=T)
 # Ideally, you should clean up your N/A values before you do any analysis
 
 #median
-median(csv$One.Year.Graduate.Count, na.rm=T)
+median(cde_grad_counts$One.Year.Graduate.Count, na.rm=T)
 
 #standard deviation
-sd(csv$One.Year.Graduate.Count, na.rm=T)
+sd(cde_grad_counts$One.Year.Graduate.Count, na.rm=T)
 
 ```
 
@@ -371,7 +442,7 @@ sd(csv$One.Year.Graduate.Count, na.rm=T)
 Before we get too deep into this, let's clean the data a bit. The graduation
 counts are all for school years, so they look like this
 ```{r Academic Year}
-unique(csv$Academic.Year) #the unique() function shows the unique values for an object
+unique(cde_grad_counts$Academic.Year) #the unique() function shows the unique values for an object
 ```
 That's not really how we want that to look, so let's modify that column a bit to
 give us discrete years
@@ -379,12 +450,12 @@ give us discrete years
 ```{r Change Academic Year to single years}
 #the substr() function lets us just take a chunk of a string. Here, we want just
 #the 6th through 9th characters. We're also coercing it to a number.
-csv=csv %>%
+cde_grad_counts=cde_grad_counts %>%
   mutate(Year=as.numeric(substr(Academic.Year,6,9))) %>%
   relocate(Year,1) #mutate adds columns to the end of the dataframe, so I'm
                    #putting it at the front
 
-head(csv)
+head(cde_grad_counts)
 ```
 Now that we have a number rather than a character for Year, it will be easier to
 do some testing with it. Let's see if there's a correlation between the total
@@ -393,7 +464,7 @@ graduates over the years.
 
 ```{r Correlation White/Hispanic}
 #First, we need to massage the data into a better form for a correlation test
-corr_data=csv %>%
+corr_data=cde_grad_counts %>%
   select(Year,Reporting.Category, One.Year.Graduate.Count) %>%
   group_by(Year,Reporting.Category) %>%
   summarise(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>%
@@ -419,7 +490,7 @@ subset our data at the school level, then compare
 
 ```{r T-test}
 #subset to school level
-t_data=csv %>%
+t_data=cde_grad_counts %>%
   select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
   group_by(County.Name,School.Name) %>% #group by both county and school
   summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
@@ -428,7 +499,6 @@ t_data=csv %>%
 
 
 ```
-
 
 ## Regressions
 ```{r}
