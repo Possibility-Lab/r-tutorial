@@ -500,20 +500,107 @@ t_data=cde_grad_counts %>%
 
 ```
 
+```{r T-test}
+#subset to school level
+t_data=cde_grad_counts %>%
+  select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
+  group_by(County.Name,School.Name) %>% #group by both county and school
+  summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
+  filter(County.Name %in% c("Alameda","Santa Clara")) %>% #we only want these two counties. The %in% operator is a great way to set a conditional without having to go through tons of different individual conditional statements
+  select(County.Name,Grad.Count) %>%
+  pivot_wider(names_from = County.Name, values_from = Grad.Count) #we need this data to be in wide format to do a t-test
+
+t_data #note that, since there are different numbers of schools in these counties, the dataframe has two lists
+
+t.test(unlist(t_data$Alameda),unlist(t_data$`Santa Clara`)) #we solve that list problem with the unlist command
+
+
+```
+These means are definitely different!
+
+<<<<<<< HEAD
+Let's take a look now at some more detailed methods. What if we want to know if
+overall graduation rates are increasing over the years? We can run a regression
+with year as the independent variable and grad counts as the dependent variable.
+
+Note: there's some funky stuff in this covariate set. Not all of the years have 
+the same demographic information, so we're going to need to do a bit of cleaning
+to get a usable dataset. (note: this particular dataset is the result of 
+combining two different datasets with different information in them, and the 
+second dataset's reporting categories don't disaggregate race and gender for 
+whatever reason)
+
+=======
+
 ## Regressions
 ```{r}
+grad_race=cde_grad_counts %>%
+  filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan Native", 
+                      "Asian","Pacific Islander","Filipino","African American","White",
+                      "Two or more races","Not reported")) 
 
+grad_reg=lm(One.Year.Graduate.Count ~ Year, data=grad_race)
+
+summary(grad_reg)
 ```
+Looks like we're getting some pretty significant numbers there on a simple
+univariate regression. Let's add in some covariates here. 
+reason).
+
+```{r}
+grad_reg_race=lm(One.Year.Graduate.Count ~ Year+Reporting.Category, data=grad_race)
+
+summary(grad_reg_race)
+```
+Now that we've pulled out race as a covariate, we can see that the actual growth
+year-to-year is much smaller than before.
 
 ## F Tests
-```{r}
+Now that we've tried a couple of different regressions on this data, we should
+take a look and see if the batch of race covariates we added earlier is making 
+a significant difference in the overall model. To do this, we do an F test.
 
+
+```{r}
+anova(grad_reg, grad_reg_race)
 ```
+Yup, those race variables are definitely adding something.
 
 ## Interaction Terms and Difference-in-Difference
+In addition to just the basic linear model formulas, you can also add in 
+interacting terms when setting up regression models. There's a couple of methods
+to do this depending on the number of terms you want to interact. To do this, 
+we're going to run a difference-in-difference model. We're going to use OUSD
+[Measure Y from 2020](https://ballotpedia.org/Oakland_Unified_School_District,_California,_Measure_Y,_Bond_Issue_(November_2020)) 
+as our distinguishing event and divide Alameda County into OUSD and non-OUSD 
+schools to get a reasonable counterfactual. Measure Y is an OUSD school funding
+measure that focused on improving building safety and infrastructure. (How would
+this lead to more graduation? Maybe safety is important? I'm not sure. This
+document is more functional than actual statistics.)
+
+```{r}
+#first, we need to filter down to just Alameda County and create a variable for OUSD/not-OUSD
+alameda=cde_grad_counts %>%
+  filter(County.Name=="Alameda") %>% #filter out everything not in Alameda County
+  mutate(OUSD=ifelse(District.Name=="Oakland Unified",1,0),  #create a variable indexing OUSD or not
+         Measure.Y=ifelse(Year>2020,1,0)) #Measure Y was implemented in 2021, so this is our event
+
+#the * command lets us easily include both variables individually and their interaction
+#If you just want the single interaction, use : instead
+measure_y=lm(One.Year.Graduate.Count ~ OUSD*Measure.Y, data=alameda) 
+summary(measure_y)
+
+```
+Looks like the implementation of Measurey Y didn't noticeably change anything in
+OUSD's graduation counts compared to the rest of the county.
+
+## Visualizations
 ```{r}
 
 ```
+
+## Additional Useful Packages
+
 
 ## Visualizations
 ```{r}
