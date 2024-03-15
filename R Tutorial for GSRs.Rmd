@@ -582,16 +582,16 @@ document is more functional than actual statistics.)
 #first, we need to filter down to just Alameda County and create a variable for OUSD/not-OUSD
 alameda=cde_grad_counts %>%
   filter(County.Name=="Alameda") %>% #filter out everything not in Alameda County
-  mutate(OUSD=ifelse(District.Name=="Oakland Unified",1,0),  #create a variable indexing OUSD or not
+  mutate(OUSD=ifelse(District.Name=="Oakland Unified",1,0),  #create a variable indexing OUSD or not. ifelse is a good this to use in this context to get a binary variable that is needed for diff-in-diff, or you can use fastDummies
          Measure.Y=ifelse(Year>2020,1,0)) #Measure Y was implemented in 2021, so this is our event
 
-#the * command lets us easily include both variables individually and their interaction
-#If you just want the single interaction, use : instead
+#the "*" command lets us easily include both variables individually and their interaction
+#If you just want the single interaction, use ":" instead
 measure_y=lm(One.Year.Graduate.Count ~ OUSD*Measure.Y, data=alameda) 
 summary(measure_y)
 
 ```
-Looks like the implementation of Measurey Y didn't noticeably change anything in
+Looks like the implementation of Measure Y didn't noticeably change anything in
 OUSD's graduation counts compared to the rest of the county.
 
 ## Visualizations
@@ -601,10 +601,3 @@ OUSD's graduation counts compared to the rest of the county.
 
 ## Additional Useful Packages
 
-
-## Visualizations
-```{r}
-
-```
-
-## Additional Useful Packages
