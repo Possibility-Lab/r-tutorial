@@ -339,7 +339,7 @@ can be reviewed in further detail by following the links below:
 
 [Application Programming Interfaces (APIs)](https://info201.github.io/apis.html)
 
-## Data Shaping and the Pipe Function
+## Data Shaping
 Data shaping along with the pipe function give us the ability to manipulate our
 data so that it is presented in a manner that makes the most sense for our
 analysis and also a manner of analysis itself. We can take our data and
@@ -386,10 +386,55 @@ variable. We can use the the "cast" function further by creating statistical
 results across a grouping, such as a mean value across a certain grouping of
 observations.
 
+## The Pipe Function
+Within the world of Dplyr and Tidyverse, we can easily manipulate, create,
+identify, join, and understand the data set we are currently analyzing. In this
+work we introduce the pipe function. Denoted by %>% in R code, we can take
+a data set and perform subsequent actions on the data one after the other. For
+example, the pipe function allows us to take a data set, select a group of
+features, group by a certain characteristic in those features, create
+statistical summaries for these grouped features, and present the results in a
+summary table. We will show the potential of the pipe function using the data
+we plan to later use for analysis.
 
+```{r Pipe Function - Example 1}
+# First observe the available features in our working data set.
+head(csv)
 
-```{r Pipe Function}
+# Say we want to identify the number of county entries in the data set.
+csv %>% # Call the data set with pipe function to add subsequent action.
+  select(County.Name) %>% # Select function collects the features of interest.
+  group_by(County.Name) %>% # Group the rows into groups based on feature.
+  mutate(count = n()) %>% # Create a new variable "count" which counts the total number of rows in each group.
+  unique() %>% # Return only unique entries across the groupings.
+  arrange(-count) # Sort the results in descending order by count.
+```
 
+```{r Pipe Function - Example 2}
+# We want to find the average one-year graduate count by reporting category.
+csv %>% # Again call the original data set with pipe function.
+  select(Reporting.Category, One.Year.Graduate.Count) %>% # Collect columns.
+  group_by(Reporting.Category) %>% # Group by the Reporting Category.
+  mutate(avg_One.Year.Graduate.Count = mean(One.Year.Graduate.Count, na.rm = TRUE)) %>% # Create the mean variable.
+  select(-One.Year.Graduate.Count) %>% # Remove column we no longer need.
+  unique() %>% # Return only unique entries across the groupings.
+  arrange(avg_One.Year.Graduate.Count) # Sort by increasing order.
+```
+
+```{r Pipe Function - Example 3}
+# Say we want a random sampling of the County Name and we want to save the results.
+csv_county.name <- csv %>% # Call the data set with pipe function and save in a new data object.
+  select(County.Name) %>% # Pull out the needed column.
+  sample_n(10) %>% # Get a random sample of 10 entries.
+  mutate(Random.Number = sample(1:100, n(), replace = FALSE)) # Add a column with random number between 1 and 100 for each county.
+```
+
+```{r Pipe Function - Example 4}
+# Now that we have saved this new object, say we want to join it against the original data set.
+csv %>% # Again, call the data set with pipe function.
+  left_join(csv_county.name, by = "County.Name") %>% # Left join the two data sets by county name.
+  select(County.Name, Random.Number) %>% # Select columns of interest.
+  drop_na() # Drop all observations with missing observations from the data set.
 ```
 
 ### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
