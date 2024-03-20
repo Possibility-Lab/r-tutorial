@@ -458,7 +458,7 @@ cde_grad_counts <- csv
 cde_grad_counts %>%
   select(County.Name) %>% # Get the "County.Name" column.
   unique() %>% # Observe the unique values.
-  head() %>% # Only observe the top 5 entries.
+  head() # Only observe the top 5 entries.
   
 # We observe the first value is "Alameda".
 # We Will treat this as our base value to avoid multicollinearity issues.
@@ -483,13 +483,13 @@ each feature-value combination across our entire data set.
 
 ```{r Dummy Variable - Slow}
 # Load in original data frame from CSV.
-cde_grad_counts <- csv
+cde_grad_counts_dummies <- csv
 
 # Import the "fastDummies" library to quickly make dummy variables.
 library(fastDummies)
 
 # Create the dummy variables for corresponding features.
-cde_grad_counts <- fastDummies::dummy_cols(cde_grad_counts,
+cde_grad_counts_dummies <- fastDummies::dummy_cols(cde_grad_counts_dummies,
                                            c("Aggregate.Level", 
                                              "Count.Name", 
                                              "District.Name", 
@@ -499,7 +499,7 @@ cde_grad_counts <- fastDummies::dummy_cols(cde_grad_counts,
                                            remove_selected_columns = TRUE)
 
 # Observe how we have created the dummy variables.
-head(cde_grad_counts)
+head(cde_grad_counts_dummies)
 ```
 
 # Conducting Statistical Analyses Using R (Clopton)
@@ -532,9 +532,11 @@ sd(cde_grad_counts$One.Year.Graduate.Count, na.rm=T)
 ## T Tests and Correlations
 Before we get too deep into this, let's clean the data a bit. The graduation
 counts are all for school years, so they look like this
+
 ```{r Academic Year}
 unique(cde_grad_counts$Academic.Year) #the unique() function shows the unique values for an object
 ```
+
 That's not really how we want that to look, so let's modify that column a bit to
 give us discrete years
 
@@ -548,6 +550,7 @@ cde_grad_counts=cde_grad_counts %>%
 
 head(cde_grad_counts)
 ```
+
 Now that we have a number rather than a character for Year, it will be easier to
 do some testing with it. Let's see if there's a correlation between the total
 number of white graduates over the years and the total number of Hispanic
@@ -556,7 +559,13 @@ graduates over the years.
 ```{r Correlation White/Hispanic}
 #First, we need to massage the data into a better form for a correlation test
 corr_data=cde_grad_counts %>%
-  select(Year,Reporting.Category, One.Year.Graduate.Count) %>%
+  #Since this data is missing some categories for some years, we're filtering
+  #to make sure we get an accurate count for all years.
+  filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan 
+                                   Native", "Asian","Pacific Islander",
+                                   "Filipino","African American","White",
+                                   "Two or more races","Not reported")) %>%
+  select(Year, Reporting.Category, One.Year.Graduate.Count) %>%
   group_by(Year,Reporting.Category) %>%
   summarise(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>%
   pivot_wider(names_from = Reporting.Category, values_from = Grad.Count)
@@ -568,6 +577,7 @@ corr_data
 cor(corr_data$`Hispanic/Latino`,corr_data$White)
 
 ```
+
 Interesting! There's a strong negative correlation here. When we look at the
 data, we can see why. Hispanic/Latino graduates have increased in number while
 White graduates have reduced over the same period. Remember, correlation does
@@ -582,18 +592,10 @@ subset our data at the school level, then compare
 ```{r T-test}
 #subset to school level
 t_data=cde_grad_counts %>%
-  select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
-  group_by(County.Name,School.Name) %>% #group by both county and school
-  summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
-  filter(County.Name %in% c("Alameda","Santa Clara")) %>% #we only want these two counties, double equal for Boolean
-  select(County.Name,Grad.Count) 
-
-
-```
-
-```{r T-test}
-#subset to school level
-t_data=cde_grad_counts %>%
+    filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan 
+                                   Native", "Asian","Pacific Islander",
+                                   "Filipino","African American","White",
+                                   "Two or more races","Not reported")) %>%
   select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
   group_by(County.Name,School.Name) %>% #group by both county and school
   summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
@@ -604,12 +606,10 @@ t_data=cde_grad_counts %>%
 t_data #note that, since there are different numbers of schools in these counties, the dataframe has two lists
 
 t.test(unlist(t_data$Alameda),unlist(t_data$`Santa Clara`)) #we solve that list problem with the unlist command
-
-
 ```
+
 These means are definitely different!
 
-<<<<<<< HEAD
 Let's take a look now at some more detailed methods. What if we want to know if
 overall graduation rates are increasing over the years? We can run a regression
 with year as the independent variable and grad counts as the dependent variable.
@@ -621,30 +621,35 @@ combining two different datasets with different information in them, and the
 second dataset's reporting categories don't disaggregate race and gender for 
 whatever reason)
 
-=======
-
 ## Regressions
 ```{r}
 grad_race=cde_grad_counts %>%
-  filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan Native", 
-                      "Asian","Pacific Islander","Filipino","African American","White",
-                      "Two or more races","Not reported")) 
+  filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan 
+                                   Native", "Asian","Pacific Islander",
+                                   "Filipino","African American","White",
+                                   "Two or more races","Not reported"))
 
-grad_reg=lm(One.Year.Graduate.Count ~ Year, data=grad_race)
+#Use the lm function, which stores a formula with dependent variable on the left
+#and independents on the right. This produces a linear model object.
+grad_reg=lm(One.Year.Graduate.Count ~ Year, data=grad_race) 
 
+#summary gives us the detailed stats for our linear model object
 summary(grad_reg)
 ```
+
 Looks like we're getting some pretty significant numbers there on a simple
 univariate regression. Let's add in some covariates here. 
-reason).
 
 ```{r}
 grad_reg_race=lm(One.Year.Graduate.Count ~ Year+Reporting.Category, data=grad_race)
 
 summary(grad_reg_race)
 ```
+
 Now that we've pulled out race as a covariate, we can see that the actual growth
-year-to-year is much smaller than before.
+year-to-year is much smaller than before. Note that we didn't technically need
+to make dummy variables for this and we still got a result. However, in some
+cases, it's still a good idea to make a big list of dummies.
 
 ## F Tests
 Now that we've tried a couple of different regressions on this data, we should
@@ -653,8 +658,11 @@ a significant difference in the overall model. To do this, we do an F test.
 
 
 ```{r}
+#this is pretty simple, use the anova function and include two linear model
+#objects
 anova(grad_reg, grad_reg_race)
 ```
+
 Yup, those race variables are definitely adding something.
 
 ## Interaction Terms and Difference-in-Difference
@@ -672,23 +680,104 @@ document is more functional than actual statistics.)
 ```{r}
 #first, we need to filter down to just Alameda County and create a variable for OUSD/not-OUSD
 alameda=cde_grad_counts %>%
-  filter(County.Name=="Alameda") %>% #filter out everything not in Alameda County
-  mutate(OUSD=ifelse(District.Name=="Oakland Unified",1,0),  #create a variable indexing OUSD or not. ifelse is a good this to use in this context to get a binary variable that is needed for diff-in-diff, or you can use fastDummies
-         Measure.Y=ifelse(Year>2020,1,0)) #Measure Y was implemented in 2021, so this is our event
+  #filter out everything not in Alameda County
+  filter(County.Name=="Alameda") %>%
+  #create a variable indexing OUSD or not. ifelse is a good this to use in this 
+  #context to get a binary variable that is needed for diff-in-diff, or you can 
+  #use fastDummies
+  mutate(OUSD=ifelse(District.Name=="Oakland Unified",1,0),  
+         #Measure Y was implemented in 2021, so this is our event
+         Measure.Y=ifelse(Year>2020,1,0)) 
 
-#the "*" command lets us easily include both variables individually and their interaction
-#If you just want the single interaction, use ":" instead
+#The "*" command lets us easily include both variables individually and their 
+#interaction. If you just want the single interaction, use ":" instead.
 measure_y=lm(One.Year.Graduate.Count ~ OUSD*Measure.Y, data=alameda) 
 summary(measure_y)
 
 ```
+
 Looks like the implementation of Measure Y didn't noticeably change anything in
 OUSD's graduation counts compared to the rest of the county.
 
 ## Visualizations
-```{r}
 
+Visualization in R has a few different ways to approach it, but the king of
+data vis is the ggplot package from the tidyverse. ggplot has a wide variety
+of functionalities and additional add-ons that let you get very particular with
+how you want your graphs to look. ggplot and its extensions are a big rabbit
+hole to go down, so we're going to focus on just some basics.
+
+Let's create a simple visualization of graduation counts over time. You'll see
+below that I'm creating this graph starting from the dataset and going all the 
+way to a graph. Since ggplot is part of tidyverse, it integrates smoothly with
+the rest of tidyverse's packages and functionalities.
+
+ggplot has a few key things you need to include. It starts with creating an
+empty plot, then you add elements to it. You can specify things in the statement
+that creates the plot, and it's often good practice to do so if you want your
+graphs to all draw from the same data, but it's not 100% necessary.
+
+Next you need to add in what kind of graph you want. ggplot supports most common
+chart types. At this step, you can assign variables to the x and y axis.
+
+
+
+```{r Make a Chart}
+grads_by_year_plot=grad_race %>%
+  group_by(Year) %>%
+  drop_na() %>% #the level at which you drop NA values is important!
+  summarize(Count=sum(One.Year.Graduate.Count)) %>%
+  #at this point, we have a working dataframe, but let's keep going
+  ggplot()+ #rather than pipe, once you initialize a ggplot, you use + instead
+  #In the line either above or below this, you need to include an aes statement.
+  #This tells the chart what to map and how
+  geom_line(aes(x=Year,y=Count))  
+
+grads_by_year_plot
 ```
 
-## Additional Useful Packages
+Great! We have a simple graph. But it's too simple. Let's add stuff.
 
+```{r Improve the Chart}
+grads_by_year_plot=grads_by_year_plot+ #note that you can keep adding things to ggplots
+  #let's start by making our labels more descriptive using the labs function
+  labs(title="Number of Students Graduating from High School in California",
+       x="Graduation Year", y="Graduate Count")+
+  #we can use scale_x_continuous to format our continuous variable x-axis
+  scale_x_continuous(breaks=2013:2023) #breaks tells ggplot where to put ticks
+
+grads_by_year_plot
+```
+
+Looks better, but there's more we can do here to make it cleaner. One thing is 
+to add some prebuilt themes and data labels
+
+```{r Chart Formatting}
+grads_by_year_plot=grads_by_year_plot+
+  theme_bw() # a simple prebuilt theme
+
+#let's try data labels two ways
+#using geom_text
+grads_by_year_plot+
+  geom_text(aes(x=Year, #place the label at this x value
+                y=Count, #and this y value
+                label=Count)) #and label it with this value
+
+#That looks really messy. Let's try another package called ggrepel
+library(ggrepel)
+
+grads_by_year_plot+
+  geom_text_repel(aes(x=Year, #place the label at this x value
+                y=Count, #and this y value
+                label=Count)) #and label it with this value)
+
+#That's a bit better. Let's try one more with label instead of text
+
+grads_by_year_plot+
+  geom_label_repel(aes(x=Year, #place the label at this x value
+                y=Count, #and this y value
+                label=Count)) #and label it with this value
+
+#That's probably our best bet for now
+
+```
