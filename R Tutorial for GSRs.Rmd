@@ -39,7 +39,8 @@ documents where you put all of your code. R Markdown documents are a bit fuller
 featured and let you do things like text formatting, organizing your code into
 discrete chunks, and printing your output directly in the source pane. The main
 advantage of markdown files for students is to create well formatted documents 
-that are ready to use as your finalized problem set.
+that are ready to use as your finalized problem set. (If you're truly nuts like
+a friend of mine, you can even write your whole dissertation in RStudio.)
 
 ## RStudio Projects
 RStudio also has a projects feature that lets you tie together a number of 
@@ -299,7 +300,7 @@ head(excel)
 ## Example loading in a CSV file.
 
 # Load CSV file in to R object.
-csv <- read.csv(file = "Tutorial_Data/CDE_Graduation_Counts.csv") #RC: Since I've chosen a .csv data file to load in, I'm going ahead and loading it so I can play with it in the analysis section
+csv <- read.csv(file = "Tutorial_Data/CDE_Graduation_Counts.csv")
 
 # Make sure the data were loaded properly.
 dim(csv)
@@ -405,7 +406,8 @@ head(csv)
 csv %>% # Call the data set with pipe function to add subsequent action.
   select(County.Name) %>% # Select function collects the features of interest.
   group_by(County.Name) %>% # Group the rows into groups based on feature.
-  mutate(count = n()) %>% # Create a new variable "count" which counts the total number of rows in each group.
+  mutate(count = n()) %>% # Create a new variable "count" which counts the total 
+                          # number of rows in each group.
   unique() %>% # Return only unique entries across the groupings.
   arrange(-count) # Sort the results in descending order by count.
 ```
@@ -415,7 +417,8 @@ csv %>% # Call the data set with pipe function to add subsequent action.
 csv %>% # Again call the original data set with pipe function.
   select(Reporting.Category, One.Year.Graduate.Count) %>% # Collect columns.
   group_by(Reporting.Category) %>% # Group by the Reporting Category.
-  mutate(avg_One.Year.Graduate.Count = mean(One.Year.Graduate.Count, na.rm = TRUE)) %>% # Create the mean variable.
+  mutate(avg_One.Year.Graduate.Count = mean(One.Year.Graduate.Count, 
+                                  na.rm = TRUE)) %>% # Create the mean variable.
   select(-One.Year.Graduate.Count) %>% # Remove column we no longer need.
   unique() %>% # Return only unique entries across the groupings.
   arrange(avg_One.Year.Graduate.Count) # Sort by increasing order.
@@ -423,21 +426,26 @@ csv %>% # Again call the original data set with pipe function.
 
 ```{r Pipe Function - Example 3}
 # Say we want a random sampling of the County Name and we want to save the results.
-csv_county.name <- csv %>% # Call the data set with pipe function and save in a new data object.
+# Call the data set with pipe function and save in a new data object.
+csv_county.name <- csv %>% 
   select(County.Name) %>% # Pull out the needed column.
   sample_n(10) %>% # Get a random sample of 10 entries.
-  mutate(Random.Number = sample(1:100, n(), replace = FALSE)) # Add a column with random number between 1 and 100 for each county.
+  # Add a column with random number between 1 and 100 for each county.
+  mutate(Random.Number = sample(1:100, n(), replace = FALSE)) 
 ```
 
 ```{r Pipe Function - Example 4}
-# Now that we have saved this new object, say we want to join it against the original data set.
+# Now that we have saved this new object, say we want to join it against the 
+# original data set.
 csv %>% # Again, call the data set with pipe function.
-  left_join(csv_county.name, by = "County.Name") %>% # Left join the two data sets by county name.
+  # Left join the two data sets by county name.
+  left_join(csv_county.name, by = "County.Name") %>% 
   select(County.Name, Random.Number) %>% # Select columns of interest.
   drop_na() # Drop all observations with missing observations from the data set.
 ```
 
-### Creating a dummy variable (RC Note: this is a specific thing that needs to be in this section as it's what is going to get us to the analysis part of the document)
+### Creating a dummy variable 
+
 Since R cannot directly handle categorical/word values for features in our data
 sets, we must handle these values so that R can proceed with analysis. To do so,
 we create "dummy" variables or new features in our data set that replace the
@@ -534,7 +542,7 @@ Before we get too deep into this, let's clean the data a bit. The graduation
 counts are all for school years, so they look like this
 
 ```{r Academic Year}
-unique(cde_grad_counts$Academic.Year) #the unique() function shows the unique values for an object
+unique(cde_grad_counts$Academic.Year) 
 ```
 
 That's not really how we want that to look, so let's modify that column a bit to
@@ -596,16 +604,25 @@ t_data=cde_grad_counts %>%
                                    Native", "Asian","Pacific Islander",
                                    "Filipino","African American","White",
                                    "Two or more races","Not reported")) %>%
-  select(County.Name,School.Name,One.Year.Graduate.Count) %>% #grab just what we need
-  group_by(County.Name,School.Name) %>% #group by both county and school
-  summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% #summarize at that grouping level
-  filter(County.Name %in% c("Alameda","Santa Clara")) %>% #we only want these two counties. The %in% operator is a great way to set a conditional without having to go through tons of different individual conditional statements
+  #grab just what we need
+  select(County.Name,School.Name,One.Year.Graduate.Count) %>% 
+  #group by both county and school
+  group_by(County.Name,School.Name) %>% 
+  #summarize at that grouping level
+  summarize(Grad.Count=sum(One.Year.Graduate.Count, na.rm=T)) %>% 
+  filter(County.Name %in% c("Alameda","Santa Clara")) %>% 
+  #we only want these two counties. The %in% operator is a great way to set a 
+  #conditional without having to go through tons of different individual 
+  #conditional statements
   select(County.Name,Grad.Count) %>%
-  pivot_wider(names_from = County.Name, values_from = Grad.Count) #we need this data to be in wide format to do a t-test
+  #we need this data to be in wide format to do a t-test
+  pivot_wider(names_from = County.Name, values_from = Grad.Count) 
 
-t_data #note that, since there are different numbers of schools in these counties, the dataframe has two lists
+t_data #note that, since there are different numbers of schools in these 
+      #counties, the dataframe has two lists
 
-t.test(unlist(t_data$Alameda),unlist(t_data$`Santa Clara`)) #we solve that list problem with the unlist command
+#we solve that list problem with the unlist command
+t.test(unlist(t_data$Alameda),unlist(t_data$`Santa Clara`)) 
 ```
 
 These means are definitely different!
@@ -622,7 +639,7 @@ second dataset's reporting categories don't disaggregate race and gender for
 whatever reason)
 
 ## Regressions
-```{r}
+```{r Basic Univariate Regression}
 grad_race=cde_grad_counts %>%
   filter(Reporting.Category %in% c("Hispanic/Latino","American Indian/Alaskan 
                                    Native", "Asian","Pacific Islander",
@@ -640,8 +657,9 @@ summary(grad_reg)
 Looks like we're getting some pretty significant numbers there on a simple
 univariate regression. Let's add in some covariates here. 
 
-```{r}
-grad_reg_race=lm(One.Year.Graduate.Count ~ Year+Reporting.Category, data=grad_race)
+```{r Multivariate Regression}
+grad_reg_race=lm(One.Year.Graduate.Count ~ Year+Reporting.Category, 
+                 data=grad_race)
 
 summary(grad_reg_race)
 ```
@@ -657,7 +675,7 @@ take a look and see if the batch of race covariates we added earlier is making
 a significant difference in the overall model. To do this, we do an F test.
 
 
-```{r}
+```{r F-Test}
 #this is pretty simple, use the anova function and include two linear model
 #objects
 anova(grad_reg, grad_reg_race)
@@ -677,8 +695,9 @@ measure that focused on improving building safety and infrastructure. (How would
 this lead to more graduation? Maybe safety is important? I'm not sure. This
 document is more functional than actual statistics.)
 
-```{r}
-#first, we need to filter down to just Alameda County and create a variable for OUSD/not-OUSD
+```{r Difference-in-Difference}
+#first, we need to filter down to just Alameda County and create a variable for 
+#OUSD/not-OUSD
 alameda=cde_grad_counts %>%
   #filter out everything not in Alameda County
   filter(County.Name=="Alameda") %>%
